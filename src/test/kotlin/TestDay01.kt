@@ -1,8 +1,8 @@
 import maelise.castel.Direction
 import maelise.castel.Rotation
 import maelise.castel.countZerosEncountered
-import org.junit.jupiter.api.Test
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
 class TestDay01 {
 

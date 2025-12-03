@@ -6,7 +6,7 @@ import kotlin.math.abs
 private const val STARTING_INDEX = 50
 
 fun main() {
-  val rotations = readLines("/day01.txt").map { line -> parseRotation(line) }
+    val rotations = readLines("/day01.txt").map { line -> parseRotation(line) }
 
   val nbOfStoppedAtZero = countStoppedAtZero(rotations)
   println(nbOfStoppedAtZero)
