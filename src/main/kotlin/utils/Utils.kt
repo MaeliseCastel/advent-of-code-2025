@@ -13,3 +13,5 @@ fun readColumns(filePath: String): List<String> {
 }
 
 data class Range(val start: Long, val end: Long)
+
+data class Matrix<T>(val grid: List<List<T>>)

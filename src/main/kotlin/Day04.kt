@@ -1,27 +1,26 @@
 package maelise.castel
 
+import maelise.castel.utils.Matrix
 import maelise.castel.utils.readLines
 
 private const val ROLL_PAPER = '@'
 
 fun main() {
-    val matrix = Matrix(readLines("/day04.txt").map { line -> line.map { it } })
+    val matrix = Matrix<Char>(readLines("/day04.txt").map { line -> line.map { it } })
 
     val pickedUpPaper = getNumberOfPickedUpPapers(matrix)
     println("Number of picked up roll papers: $pickedUpPaper")
 }
 
-private data class Matrix(val grid: List<List<Char>>)
-
-private fun getNumberOfPickedUpPapers(matrix: Matrix): Int {
-    val (numberOfPickedUpPapers,matrixWithPickedUpPapers) = pickUpAccessiblePapers(matrix)
+private fun getNumberOfPickedUpPapers(matrix: Matrix<Char>): Int {
+    val (numberOfPickedUpPapers, matrixWithPickedUpPapers) = pickUpAccessiblePapers(matrix)
     if (numberOfPickedUpPapers == 0) {
         return 0
     }
     return numberOfPickedUpPapers + getNumberOfPickedUpPapers(matrixWithPickedUpPapers)
 }
 
-private fun pickUpAccessiblePapers(matrix: Matrix): Pair<Int, Matrix> {
+private fun pickUpAccessiblePapers(matrix: Matrix<Char>): Pair<Int, Matrix<Char>> {
     var count = 0
     val gridWithPickedUpPapers = matrix.grid.map { it.toMutableList() }
     for (line in matrix.grid.indices) {
@@ -34,10 +33,10 @@ private fun pickUpAccessiblePapers(matrix: Matrix): Pair<Int, Matrix> {
             }
         }
     }
-    return Pair(count,Matrix(gridWithPickedUpPapers))
+    return Pair(count, Matrix(gridWithPickedUpPapers))
 }
 
-private fun getNeighbours(line: Int, column: Int, matrix: Matrix): List<Char> {
+private fun getNeighbours(line: Int, column: Int, matrix: Matrix<Char>): List<Char> {
     return MatrixDirection.entries.mapNotNull { matrixDirection ->
         val neighbourLine = line + matrixDirection.lineDelta
         val neighbourColumn = column + matrixDirection.columnDelta
@@ -49,7 +48,8 @@ private fun getNeighbours(line: Int, column: Int, matrix: Matrix): List<Char> {
     }
 }
 
-private fun isInMatrix(line: Int, column: Int, matrix: Matrix) = line in matrix.grid.indices && column in matrix.grid[line].indices
+private fun isInMatrix(line: Int, column: Int, matrix: Matrix<Char>) =
+    line in matrix.grid.indices && column in matrix.grid[line].indices
 
 private enum class MatrixDirection(val lineDelta: Int, val columnDelta: Int) {
     UP(-1, 0),
