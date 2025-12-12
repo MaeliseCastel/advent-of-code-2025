@@ -43,18 +43,16 @@ private fun computeNumberOfSplit(matrix: Matrix<Char>): Int {
     return numberOfSplits
 }
 
-private fun computeTimelines(matrix: Matrix<Char>): Int {
+private fun computeTimelines(matrix: Matrix<Char>): Long {
     val startingPosition = getStartingPosition(matrix).moveDown(matrix)!!
-    val numberOfPathsFromCoordinates = mutableMapOf<MatrixCoordinates, Int>()
-    val visitedGrid = matrix.grid.map { char -> char.toMutableList() }.toMutableList()
+    val numberOfPathsFromCoordinates = mutableMapOf<MatrixCoordinates, Long>()
 
-    fun getNumberOfPathsFromCoordinates(coordinates: MatrixCoordinates): Int {
+    fun getNumberOfPathsFromCoordinates(coordinates: MatrixCoordinates): Long {
         numberOfPathsFromCoordinates[coordinates]?.let { return it }
         if (coordinates.isOnLastLine(matrix)) {
-            numberOfPathsFromCoordinates[coordinates] = 1
-            return 1
+            return 1L
         }
-        var numberOfPaths = 0
+        var numberOfPaths = 0L
         if (matrix.grid[coordinates.line][coordinates.column] == SPLITTER) {
             val newCoordinatesToMoveBeams = coordinates.moveAroundSplitter(matrix)
             for (newCoordinates in newCoordinatesToMoveBeams) {
@@ -62,7 +60,6 @@ private fun computeTimelines(matrix: Matrix<Char>): Int {
             }
         } else if (matrix.grid[coordinates.line][coordinates.column] == FREE_SPACE) {
             val newCoordinatesToMoveBeams = coordinates.moveDown(matrix)
-            visitedGrid[coordinates.line][coordinates.column] = BEAMS
             if (newCoordinatesToMoveBeams != null) {
                 numberOfPaths += getNumberOfPathsFromCoordinates(newCoordinatesToMoveBeams)
             }
@@ -72,9 +69,6 @@ private fun computeTimelines(matrix: Matrix<Char>): Int {
     }
 
     val totalNumberOfPaths = getNumberOfPathsFromCoordinates(startingPosition)
-    visitedGrid.forEach { line ->
-        println(line)
-    }
     return totalNumberOfPaths
 }
 
@@ -104,5 +98,3 @@ private data class MatrixCoordinates(val line: Int, val column: Int) {
 
 private fun MatrixCoordinates.isInMatrix(matrix: Matrix<Char>): Boolean =
     line in matrix.grid.indices && column in matrix.grid[line].indices
-
-// 68991020 -> too low
