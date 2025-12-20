@@ -28,14 +28,10 @@ fun main() {
         coordinates.forEachIndexed { otherIndex, otherCoordinates ->
             if (index != otherIndex) {
                 val rectangle = buildRectangle(currentCoordinates, otherCoordinates)
-                val now = System.currentTimeMillis()
                 val pointsToCheck = rectangle.lines.flatMap { line -> line.getAllPoints() }.toSet()
-                println("get all points: ${(System.currentTimeMillis() - now)}ms")
-
-                val arePointsInside = pointsToCheck.all { point ->
-                    shape.isCoordinateInside(point) || lines.any { line -> line.isPointOnLine(point) }
-                }
-                if (arePointsInside) {
+                if (pointsToCheck.all { point ->
+                        shape.isCoordinateInside(point) || lines.any { line -> line.isPointOnLine(point) }
+                    }) {
                     val area = computeArea(currentCoordinates, otherCoordinates)
                     if (area > localMax) localMax = area
                 }
@@ -49,7 +45,7 @@ fun main() {
         }
         if (localMax > globalMaxArea) globalMaxArea = localMax
     }
-    val totalTime = (System.currentTimeMillis() - startTime) / 1000
+    println("Largest area $globalMaxArea")
 }
 
 data class Coordinates(val x: Long, val y: Long)
