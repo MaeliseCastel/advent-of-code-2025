@@ -1,9 +1,17 @@
 package maelise.castel
 
-import kotlin.math.abs
+import javafx.application.Application
+import javafx.scene.Scene
+import javafx.scene.canvas.Canvas
+import javafx.scene.canvas.GraphicsContext
+import javafx.scene.layout.StackPane
+import javafx.scene.paint.Color
+import javafx.stage.Stage
 import maelise.castel.utils.readLines
+import kotlin.math.abs
 
 fun main() {
+    //    Application.launch(ShapeVisualizer::class.java)
     val coordinates =
         readLines("/day09.txt").map { line ->
             val (x, y) = line.split(",").map { it.toLong() }
@@ -11,30 +19,37 @@ fun main() {
         }
     val lines = buildLines(coordinates)
     val shape = Shape(lines)
+    var globalMaxArea = 0L
+    val total = coordinates.size * (coordinates.size - 1)
+    var checked = 0
+    val startTime = System.currentTimeMillis()
+    coordinates.forEachIndexed { index, currentCoordinates ->
+        var localMax = 0L
+        coordinates.forEachIndexed { otherIndex, otherCoordinates ->
+            if (index != otherIndex) {
+                val rectangle = buildRectangle(currentCoordinates, otherCoordinates)
+                val now = System.currentTimeMillis()
+                val pointsToCheck = rectangle.lines.flatMap { line -> line.getAllPoints() }.toSet()
+                println("get all points: ${(System.currentTimeMillis() - now)}ms")
 
-    val area =
-        coordinates
-            .mapIndexed { index, currentCoordinates ->
-                coordinates
-                    .mapIndexed { otherIndex, otherCoordinates ->
-                        if (index != otherIndex) {
-                            val rectangle = buildRectangle(currentCoordinates, otherCoordinates)
-                            val pointsToCheck = rectangle.lines.flatMap { line -> line.getAllPoints() }.toSet()
-                            if (pointsToCheck.all { point ->
-                                shape.isCoordinateInside(point) || lines.any { line -> line.isPointOnLine(point) }
-                            }) {
-                                computeArea(currentCoordinates, otherCoordinates)
-                            } else {
-                                0L
-                            }
-                        } else {
-                            0L
-                        }
-                    }
-                    .max()
+                val arePointsInside = pointsToCheck.all { point ->
+                    shape.isCoordinateInside(point) || lines.any { line -> line.isPointOnLine(point) }
+                }
+                if (arePointsInside) {
+                    val area = computeArea(currentCoordinates, otherCoordinates)
+                    if (area > localMax) localMax = area
+                }
             }
-            .max()
-    println("Largest area: $area")
+            checked++
+            if (checked % 1000 == 0) {
+                val percent = checked * 100 / total
+                val elapsed = (System.currentTimeMillis() - startTime) / 1000
+                println("Progress: $percent% ($checked/$total), elapsed ${elapsed}s, current max area: $globalMaxArea")
+            }
+        }
+        if (localMax > globalMaxArea) globalMaxArea = localMax
+    }
+    val totalTime = (System.currentTimeMillis() - startTime) / 1000
 }
 
 data class Coordinates(val x: Long, val y: Long)
@@ -169,6 +184,7 @@ private fun buildLines(coordinates: List<Coordinates>): Set<Line> {
 
 private class Shape(val lines: Set<Line>) {
     private val insideCache = mutableMapOf<Coordinates, Boolean>()
+
     fun isCoordinateInside(coordinates: Coordinates): Boolean {
         return insideCache.getOrPut(coordinates) {
             var crossings = 0
@@ -183,6 +199,54 @@ private class Shape(val lines: Set<Line>) {
                 }
             }
             crossings % 2 == 1
+        }
+    }
+}
+
+class ShapeVisualizer : Application() {
+    override fun start(p0: Stage) {
+        val coordinates =
+            readLines("/day09.txt").map { line ->
+                val (x, y) = line.split(",").map { it.toLong() }
+                Coordinates(x, y)
+            }
+        val lines = buildLines(coordinates)
+        // Compute bounding box
+        val allX = lines.flatMap { listOf(it.start.x, it.end.x) }
+        val allY = lines.flatMap { listOf(it.start.y, it.end.y) }
+        val minX = allX.min()
+        val maxX = allX.max()
+        val minY = allY.min()
+        val maxY = allY.max()
+        // Canvas size
+        val canvasWidth = 800.0
+        val canvasHeight = 800.0
+        // Compute scale and offset
+        val shapeWidth = (maxX - minX).toDouble()
+        val shapeHeight = (maxY - minY).toDouble()
+        val scale = minOf((canvasWidth - 40) / shapeWidth, (canvasHeight - 40) / shapeHeight)
+        val offsetX = 20 - minX * scale
+        val offsetY = 20 - minY * scale
+        val canvas = Canvas(canvasWidth, canvasHeight)
+        val gc = canvas.graphicsContext2D
+        drawShape(gc, lines, scale, offsetX, offsetY)
+
+        val root = StackPane(canvas)
+        val scene = Scene(root, canvasWidth, canvasHeight)
+        p0.title = "Shape Visualizer"
+        p0.scene = scene
+        p0.show()
+    }
+
+    private fun drawShape(gc: GraphicsContext, lines: Set<Line>, scale: Double, offsetX: Double, offsetY: Double) {
+        gc.stroke = Color.BLUE
+        gc.lineWidth = 2.0
+        for (line in lines) {
+            gc.strokeLine(
+                line.start.x * scale + offsetX,
+                line.start.y * scale + offsetY,
+                line.end.x * scale + offsetX,
+                line.end.y * scale + offsetY)
         }
     }
 }
