@@ -3,6 +3,11 @@ package maelise.castel
 import maelise.castel.utils.Matrix
 import maelise.castel.utils.readLines
 
+// Helped by mdeshayes (thanks!!) for
+// 1. great advice on how to reason about general problems: find the immediate solution to the problem first, to prune
+// down the possibilities (and here to just solve the problem)
+// 2. spotting a bug in my first implementation of canFitAllGifts()
+
 fun main() {
     val exampleGiftShapes =
         listOf(
@@ -114,8 +119,8 @@ fun main() {
             ),
         )
 
-    val allWithoutTooSmall = readLines("/day12.txt")
-        .map { line ->
+    val treeZones =
+        readLines("/day12.txt").map { line ->
             val (dimensions, giftsToPlaceString) = line.split(":")
             val (nbRoms, nbColumns) = dimensions.split("x").map { it.toInt() }
             val giftsToPlace =
@@ -124,79 +129,37 @@ fun main() {
                 }
             TreeZone(nbRoms, nbColumns, giftsToPlace)
         }
-        .filter { it.easySolveA(inputGiftShapes) }
-    val treeZones =
-        allWithoutTooSmall
-            .filter { !it.easySolveB() }
-            .sortedBy { treeZone -> treeZone.getNumberOfGiftsToPlace() }
 
-    println(allWithoutTooSmall.size - treeZones.size)
-    treeZones.forEach { println("${it.nbRows}x${it.nbColumns} with ${it.nbGiftsToPlace.sum()} gifts: ${it.nbGiftsToPlace}") }
-//    println(treeZones.size)
+    val treeZonesWithoutTooSmallOnes = treeZones.filterNot { treeZone -> treeZone.isTooSmall(inputGiftShapes) }
 
-//        val start = System.currentTimeMillis()
-//        val nbOfRegionsWithAllGiftsPlaced =
-//            treeZones.mapIndexed { index, treeZone ->
-//                println("$treeZone with ${treeZone.getNumberOfGiftsToPlace()} gifts to place")
-//                if (treeZone.canPlaceAllGifts(exampleGiftShapes)) {
-//                    println("Zone $index: all gifts can be placed in ${System.currentTimeMillis() - start} ms")
-//                    1L
-//                } else {
-//                    0L
-//                }
-//            }
+    val treeZoneThatCanForSureFitAllGifts =
+        treeZonesWithoutTooSmallOnes.filter { treeZone -> treeZone.canFitAllGifts() }
 
-//        println(nbOfRegionsWithAllGiftsPlaced.sumOf { it })
+    println("Number of tree zones: ${treeZones.size}")
+    println("Number of tree zones without too small ones: ${treeZonesWithoutTooSmallOnes.size}")
+    println("Number of tree zones that can for sure fit all gifts: ${treeZoneThatCanForSureFitAllGifts.size}")
 }
 
 private data class GiftShape(val matrix: Matrix<Boolean>) {
-    fun getAllOrientations(): Set<GiftShape> {
-        val orientations = mutableSetOf<GiftShape>()
-        var currentMatrix = matrix
-        repeat(4) {
-            orientations.add(GiftShape(currentMatrix))
-            currentMatrix = currentMatrix.rotate()
-        }
-        return orientations
-    }
-
     fun getTakenSpace(): Int {
         return matrix.grid.sumOf { row -> row.count { it } }
     }
 }
 
 private data class TreeZone(val nbRows: Int, val nbColumns: Int, val nbGiftsToPlace: List<Int>) {
-    fun getNumberOfGiftsToPlace(): Int {
-        return nbGiftsToPlace.sum()
-    }
+    fun getNumberOfGiftsToPlace(): Int = nbGiftsToPlace.sum()
 
-    fun easySolveA(gifts: List<GiftShape>): Boolean {
+    fun isTooSmall(gifts: List<GiftShape>): Boolean {
         val giftsToPlace = mutableListOf<GiftShape>()
         nbGiftsToPlace.forEachIndexed { index, nbGift -> repeat(nbGift) { giftsToPlace.add(gifts[index]) } }
         val sizeOfAllGifts = giftsToPlace.sumOf { it.getTakenSpace() }
         val sizeOfGrid = nbRows * nbColumns
-        if (sizeOfAllGifts > sizeOfGrid) return false
-        return true
+        return sizeOfAllGifts > sizeOfGrid
     }
 
-    fun easySolveB(): Boolean {
-        val sizeOfAllGifts = 9 * nbGiftsToPlace.sum()
-        val sizeOfGrid = (nbRows / 3) * 3 * (nbColumns / 3) * 3
-        return sizeOfGrid > sizeOfAllGifts
+    fun canFitAllGifts(): Boolean {
+        val sizeOfAllGifts = 9 * getNumberOfGiftsToPlace()
+        val sizeOfGrid = ((nbRows / 3) * 3).toLong() * ((nbColumns / 3) * 3)
+        return sizeOfGrid >= sizeOfAllGifts
     }
-
-//    fun canPlaceAllGifts(gifts: List<GiftShape>): Boolean {
-//    }
-}
-
-private fun Matrix<Boolean>.rotate(): Matrix<Boolean> {
-    val numRows = this.numberOfRows
-    val numCols = this.numberOfColumns
-    val rotatedMatrix = this.grid.map { row -> row.toMutableList() }.toMutableList()
-    for (i in 0 until numRows) {
-        for (j in 0 until numCols) {
-            rotatedMatrix[j][numRows - 1 - i] = this.grid[i][j]
-        }
-    }
-    return Matrix(rotatedMatrix)
 }

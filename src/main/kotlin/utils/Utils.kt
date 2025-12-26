@@ -14,7 +14,4 @@ fun readColumns(filePath: String): List<String> {
 
 data class Range(val start: Long, val end: Long)
 
-data class Matrix<T>(val grid: List<List<T>>) {
-    val numberOfRows: Int = grid.size
-    val numberOfColumns: Int = if (grid.isNotEmpty()) grid[0].size else 0
-}
+data class Matrix<T>(val grid: List<List<T>>) {}
